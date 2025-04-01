@@ -1,182 +1,83 @@
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.stream.Stream;
+import java.util.List;
 
-public class Basket {
-  private class BasketPosition {
-    private Product product;
-    private int amount;
+class Basket {
+  private final List<BasketPosition> list;
+  private final List<Promotion> promotions;
+  private double totalPrice;
+  private double discountedPrice;
+  private ArrayList<Product> shop;
 
-    private BasketPosition(Product product) {
-      this.product = product;
-      this.amount = 1;
-    }
-
-    private double getFullPrice(boolean d) {
-      return this.product.getPrice(d)*this.amount;
-    }
-
-    private int getAmount() {
-      return this.amount;
-    }
-
-    private String getName() {
-      return this.product.getName();
-    }
-
-    private String getCode() {
-      return this.product.getCode();
-    }
+  public Basket(ArrayList<Product> shop) {
+    this.list = new ArrayList<>();
+    this.promotions = new ArrayList<>();
+    this.totalPrice = 0.0;
+    this.discountedPrice = 0.0;
+    this.shop = shop;
   }
 
-  private ArrayList<BasketPosition> list;
-  private Double discount_price = 100.0;
-  private Double free_product = 200.0;
-  private static class procentageDiscount {
-    private static String code = "a1";
-    private static int procentage = 20;
+  public List<BasketPosition> getList() {
+    return list;
   }
 
-  public Basket() {
-    this.list = new ArrayList<BasketPosition>();
+  public void addPromotion(Promotion promotion) {
+    this.promotions.add(promotion);
   }
-
-
-  // Promocje
-
-  private boolean isDiscount() {
-    Double result = 0.0;
-    for (BasketPosition p : this.list) {
-      result += p.getFullPrice(false);
-    }
-    return (this.discount_price < Double.valueOf(String.format("%.2f", result)));
-  }
-
-  private boolean are3Products() {
-    int result = 0;
-    for (BasketPosition p : this.list) {
-      result += p.getAmount();
-    }
-    return (3 < result);
-  }
-  
-  private String getCheapestProduct(ArrayList<Product> shop) {
-    Product cheapest = shop.get(0);
-    for (Product p : shop) {
-      if (cheapest.getPrice(false) > p.getPrice(false)) {
-        cheapest = p;
-      }
-    }
-    return cheapest.getName();
-  }
-
-  private String getMostExpensiveProduct(ArrayList<Product> shop) {
-    Product expensive = shop.get(0);
-    for (Product p : shop) {
-      if (expensive.getPrice(false) < p.getPrice(false)) {
-        expensive = p;
-      }
-    }
-    return expensive.getName();
-  }
-
-  private Stream<Basket.BasketPosition> getMostExpepensiveProducts(int n) {
-    return this.list.stream().limit(n);
-  }
-
-  private Stream<Basket.BasketPosition> getcheapestProducts(int n) {
-    this.list.sort(Comparator.comparingDouble((BasketPosition p) -> -p.getFullPrice(false)).reversed().thenComparing(p -> p.getName()));
-    ArrayList<BasketPosition> newList = this.list;
-    sortBasket();
-    return newList.stream().limit(n);
-  }
-
-  private boolean isFreeProduct() {
-    return (free_product <= getBasketPrice());
-  }
-
-  private String getFreeProduct(ArrayList<Product> shop) {
-    for (Product p : shop) {
-      if (p.getCode() == "c1") {
-        return p.getName();
-      }
-    }
-    return shop.get(0).getName();
-  }
-
-  private Double procentageProductDiscount() {
-    for (BasketPosition p : this.list) {
-      if (p.getCode() == procentageDiscount.code) {
-        return p.getAmount()*procentageDiscount.procentage/100.0;
-      }
-    }
-    return 0.0;
-  }
-
-  // Funkcje
 
   public void addToBasket(Product product) {
     for (BasketPosition p : this.list) {
-      if (p.product == product) {
-        p.amount++;
-        return;
-      }
+        if (p.getProduct().equals(product)) {
+            p.increaseAmount();
+            recalculatePrices();
+            return;
+        }
     }
     this.list.add(new BasketPosition(product));
+    recalculatePrices();
     sortBasket();
   }
 
-  public double getPositionPrice(String code) {
-    for (BasketPosition p : this.list) {
-      if (p.product.getCode() == code) {
-        return p.getFullPrice(isDiscount());
-      }
+  private void recalculatePrices() {
+    this.totalPrice = list.stream().mapToDouble(p -> p.getFullPrice(false)).sum();
+    this.discountedPrice = totalPrice;
+    System.out.println(this.discountedPrice);
+    for (Promotion promotion : promotions) {
+      promotion.apply(this, shop);
     }
-    return 0;
   }
 
-  public ArrayList<String> SeeMyBasket() {
-    ArrayList<String> result = new ArrayList<String>();
-    for (BasketPosition p : this.list) {
-      result.add(p.getName()+" in the amount of "+p.getAmount()+" price: "+p.getFullPrice(isDiscount()));
-    }
-    return result;
+  public double getTotalPrice() {
+    return totalPrice;
   }
 
-  public Double getBasketPrice() {
-    Double result = 0.0;
-    for (BasketPosition p : this.list) {
-      result += p.getFullPrice(isDiscount());
-    }
-    return Double.valueOf(String.format("%.2f", result));
+  public double getDiscountPrice() {
+    return discountedPrice;
+  }
+
+  public void setDiscountedPrice(Double price) {
+    this.discountedPrice = Math.round(price*100)/100.0;
   }
 
   private void sortBasket() {
     this.list.sort(Comparator.comparingDouble((BasketPosition p) -> -p.getFullPrice(false)).reversed().thenComparing(p -> p.getName()));
   }
 
-  public void Buy(ArrayList<Product> shop) {
-    System.out.println("Do zapłaty: "+getBasketPrice());
-    System.out.println("Promocje:");
-    if (are3Products()) {
-      System.out.println("Darmowy najtańszy produkt do trzech produktów: " + getCheapestProduct(shop));
+  public int getTotalQuantity() {
+    return list.stream().mapToInt(BasketPosition::getAmount).sum();
+  }
+
+  public void addFreeProduct(Product product) {
+    this.list.add(new BasketPosition(product));
+  }
+
+  public void printAllProducts() {
+    System.out.println("----------------");
+    recalculatePrices();
+    System.out.println("Total Price: " + getTotalPrice());
+    System.out.println("Total Price with discount: " + getDiscountPrice());
+    for (BasketPosition p : list) {
+      System.out.println("Product: " + p.getProduct().getName() + ", Quantity: " + p.getAmount() + ", Price: " + p.getFullPrice(false));
     }
-
-    if (are3Products()) {
-      System.out.println("Darmowy najtańszy produkt do trzech produktów: " + getCheapestProduct(shop));
-    }
-
-    if (isFreeProduct()) {
-      System.out.println("Darmowy produkt za określoną kwotę: " + getFreeProduct(shop));
-    }
-
-    System.out.println("Zwolnienie z płatności spowodowane obniżkami cen produktów: " + procentageProductDiscount());
-
-
-    
-
-
-
-    System.out.println(getCheapestProduct(shop));
   }
 }
