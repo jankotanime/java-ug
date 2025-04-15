@@ -42,7 +42,54 @@ public class Zgłoszenie {
     if (data.containsKey("peopleHelped")) {peopleHelped = (int) data.get("peopleHelped");}
   }
 
-  public void przypiszJednostke(Object j, String t, int n) {
+  public void przypiszJednostke(UnitType j, String t, int n) {
     rescueUnit.get(t).przypiszJednostke(j, n);
+  }
+
+  public boolean czyJednostkaOczekuje(String t) {
+    return rescueUnit.get(t).czyOczekuje();
+  }
+
+  public void jednostkaOczekuje(String t) {
+    rescueUnit.get(t).jednostkaOczekuje();
+  }
+
+  public void uratujOsobe() {
+    peopleHelped++;
+    peopleInNeed--;
+  }
+
+  public boolean czyWszyscyOcaleni() {
+    if (peopleInNeed == 0) {
+      rescueUnit.get("straz").zwolnijJednostke();
+      rescueUnit.get("policja").zwolnijJednostke();
+      rescueUnit.get("pogotowie").zwolnijJednostke();
+      return true;
+    }
+    uratujOsobe();
+    return false;
+  }
+
+  public void tura() {
+    rescueUnit.forEach((k, v) -> {
+      if (v.tura()) {
+        v.zwolnijJednostke();
+      }
+      if (v.getStatus() == "zajęty") {
+        uratujOsobe();
+      }
+    });
+  }
+
+  public Map<String, Integer> getLocation() {
+    return location;
+  }
+
+  public int getPeopleInNeed() {
+    return peopleInNeed;
+  }
+
+  public String getRaport() {
+    return ("Lokalizacja: "+location+" data: "+date+" uratowanych: "+ peopleHelped);
   }
 }
