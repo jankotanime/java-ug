@@ -14,7 +14,6 @@ public class Main {
         promotions.add(new Promotion3Products());
         promotions.add(new Promotion5Procent());
         promotions.add(new PromotionFreeProduct());
-        promotions.add(new PromotionProductDiscount());
 
         Basket basket = new Basket(shop);
 
@@ -28,6 +27,10 @@ public class Main {
         basket.addToBasket(shop.get(5));
         basket.addToBasket(shop.get(1));
         basket.addToBasket(shop.get(2));
+
+        // Promotion x = new PromotionProductDiscount();
+        
+        // basket.addPromotion(x);
 
         basket.printAllProducts();
     }
