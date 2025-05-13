@@ -50,12 +50,23 @@ public class Main {
       dyspozytor.dodajWypadek(new Wypadek(new Date(), location, getLocation(), rn.nextInt(8)+2));
     }
 
+    int coPiecTur = 0;
+
     while (true) {
       dyspozytor.tura(straze, policje, pogotowia);
       try {
         Thread.sleep(1000);
       } catch (InterruptedException e) {
           e.printStackTrace();
+      }
+      if (coPiecTur == 4) {
+        HashMap<String, Integer> location = new HashMap<>();
+        location.put("x",  rn.nextInt(10));
+        location.put("y",  rn.nextInt(10));
+        dyspozytor.dodajWypadek(new Wypadek(new Date(), location, getLocation(), rn.nextInt(8)+2));
+        coPiecTur = 0;
+      } else {
+        coPiecTur++;
       }
     }
   }
