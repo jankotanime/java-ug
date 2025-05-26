@@ -1,4 +1,3 @@
-package obiektowe;
 public class Main {
   public static void main(String[] args) {
     SystemStudiow system = new SystemStudiow();

@@ -1,4 +1,3 @@
-package obiektowe;
 import java.util.ArrayList;
 
 public interface MetodySystemu {

@@ -21,7 +21,7 @@ public class Main {
     List<Student> sredniacy = studenci.stream()
       .filter(s -> {
         double sr = s.obliczSrednia();
-        return sr >= 4.0 && sr <= 4.5;
+        return sr >= 3.0 && sr <= 4.0;
       })
       .collect(Collectors.toList());
     sredniacy.forEach(System.out::println);
