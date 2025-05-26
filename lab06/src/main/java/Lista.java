@@ -3,6 +3,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Lista {
@@ -27,12 +30,13 @@ public class Lista {
   }
 
   public Lista zmienStatusDlaDaty(String data, Status nowyStatus) {
-    List<Zadanie> nowaLista = zadania.stream()
-      .map(zadanie -> zadanie.getData_wykonania().equals(data) 
-        ? zadanie.zmienStatus(nowyStatus) 
-        : zadanie)
-      .collect(Collectors.toList());
+    Function<Zadanie, Zadanie> zmienStatus = zadanie -> zadanie.getData_wykonania().equals(data)
+        ? zadanie.zmienStatus(nowyStatus)
+        : zadanie;
 
+    List<Zadanie> nowaLista = zadania.stream()
+        .map(zmienStatus)
+        .collect(Collectors.toList());
     return new Lista(nowaLista);
   }
 
@@ -58,15 +62,17 @@ public class Lista {
   }
 
   public void wypiszZadaniaDlaTagow(Set<String> tagi) {
-    System.out.println(String.format("\nWypisanie dla tagów %s:", tagi));
+    System.out.println("\nWszystkie zadania dla tagów: "+tagi);
+    Predicate<Zadanie> filtr = zadanie -> !Collections.disjoint(zadanie.getTagi(), tagi);
     zadania.stream()
-      .filter(zadanie -> !Collections.disjoint(zadanie.getTagi(), tagi))
-      .forEach(this::wypiszZadanie);
+        .filter(filtr)
+        .forEach(this::wypiszZadanie);
   }
 
   public void wypiszWszystkieZadania() {
-    System.out.println("\nWypisanie wszystkich zadań:");
-    zadania.forEach(this::wypiszZadanie);
+    System.out.println("\nWszystkie zadania: ");
+    Consumer<Zadanie> wypisz = this::wypiszZadanie;
+    zadania.forEach(wypisz);
   }
 
   private void wypiszZadanie(Zadanie zadanie) {
@@ -83,6 +89,11 @@ public class Lista {
       .collect(Collectors.toList());
     return new Lista(nowaLista);
   }
+
+public void statystykiZadan() {
+    System.out.println(zadania.stream()
+      .collect(Collectors.groupingBy(Zadanie::getStatus, Collectors.counting())));
+}
 
   // pomocnicze do Id
   public List<Zadanie> pobierzListe() {

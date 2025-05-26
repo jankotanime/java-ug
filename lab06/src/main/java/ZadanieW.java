@@ -1,18 +1,8 @@
 import java.util.Set;
 import java.util.UUID;
 
-public class ZadanieW extends ZadanieParent implements Zadanie {
+public record ZadanieW(UUID id, String tytul, String opis, String data_wykonania, Status status, Set<String> tagi) implements Zadanie { 
   static final String priorytet = "Wysoki";
-
-  public ZadanieW(UUID id, String t, String o, String d, Status s, Set<String> tagi) {
-    this.id = id;
-    this.tytul = t;
-    this.opis = o;
-    this.data_wykonania = d;
-    this.status = s;
-    this.tagi = tagi;
-  }
-
   @Override
   public Status getStatus() {
     return this.status;

@@ -3,7 +3,6 @@ import java.util.UUID;
 
 public interface Zadanie {
   Zadanie zmienStatus(Status nowyStatus);
-  
   UUID getId();
   String getTytul();
   String getOpis();
