@@ -14,6 +14,7 @@ public class Skrzyzowanie extends TrafficElement {
   private int toEast = 0;
 
   public Skrzyzowanie() {
+    super();
     this.pojazdy = new ArrayList<>();
   }
 

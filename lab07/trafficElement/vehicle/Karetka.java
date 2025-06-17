@@ -8,8 +8,8 @@ import enums.Direction;
 
 public class Karetka extends Vehicle {
   public Karetka(List<Map<UUID, Direction>> r) {
-    super(); // Wywołanie konstruktora klasy bazowej
+    super();
     this.route = r;
-    this.priority = 2; // Priorytet dla karetki
+    this.priority = 2;
   }
 }

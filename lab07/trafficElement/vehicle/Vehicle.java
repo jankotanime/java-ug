@@ -9,11 +9,10 @@ abstract public class Vehicle extends TrafficElement {
   protected int priority;
   private int waitTime;
   protected List<Map<UUID, Direction>> route;
-  private final UUID id; // Unikalny identyfikator
 
   public Vehicle() {
+    super();
     this.waitTime = 0;
-    this.id = UUID.randomUUID(); // Generowanie unikalnego identyfikatora
   }
 
   public int getWaitTime() {
@@ -26,10 +25,6 @@ abstract public class Vehicle extends TrafficElement {
 
   public List<Map<UUID, Direction>> getRoute() {
     return route;
-  }
-
-  public UUID getId() {
-    return id; // Zwracanie unikalnego identyfikatora
   }
 
   public Direction getDirection() {

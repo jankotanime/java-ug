@@ -3,10 +3,12 @@ import java.util.UUID;
 import enums.Status;
 
 public class TrafficElement {
-  private static UUID id = UUID.randomUUID();
+  protected UUID id;
   private Status status;
 
-  public TrafficElement() {}
+  public TrafficElement() {
+    this.id = UUID.randomUUID();
+  }
 
   public UUID getId() {
     return id;

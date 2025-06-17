@@ -1,7 +1,6 @@
 package logic;
 
 import enums.Direction;
-import enums.Status;
 import trafficElement.Skrzyzowanie;
 import trafficElement.vehicle.Vehicle;
 
@@ -16,31 +15,29 @@ public class Optimizer {
     Map<Skrzyzowanie, Map<Set<Direction>, Integer>> result = new HashMap<>();
 
     for (Skrzyzowanie s : skrzyzowania) {
-      Map<Direction, Integer> vehicleCounts = s.getPojazdy().stream()
-        .collect(Collectors.groupingBy(
-          Vehicle::getDirection,
-          Collectors.summingInt(v -> 1)
-        ));
+        Map<Direction, Integer> vehicleCounts = s.getPojazdy().stream()
+        .filter(v -> v.getDirection() != null)
+            .collect(Collectors.groupingBy(
+                Vehicle::getDirection,
+                Collectors.summingInt(v -> 1)
+            ));
 
-      List<Map<Integer, Integer>> priorityAnalysis = analyzer.zobaczLiczbePriorytetow(s);
-      System.out.println("Priorytety na skrzyżowaniu: " + priorityAnalysis);
+        List<Map<Integer, Integer>> priorityAnalysis = analyzer.zobaczLiczbePriorytetow(s);
+        System.out.println("Priorytety na skrzyżowaniu: " + priorityAnalysis);
 
-      int totalWaitTime = analyzer.getTotalWaitTime(s);
-      System.out.println("Całkowity czas oczekiwania na skrzyżowaniu: " + totalWaitTime);
+        Map<Direction, Integer> priorityModifiers = calculatePriorityModifiers(s);
 
-      Map<Direction, Integer> priorityModifiers = calculatePriorityModifiers(s);
+        Set<Direction> northSouth = Set.of(Direction.NORTH, Direction.SOUTH);
+        Set<Direction> eastWest = Set.of(Direction.EAST, Direction.WEST);
 
-      Set<Direction> northSouth = Set.of(Direction.NORTH, Direction.SOUTH);
-      Set<Direction> eastWest = Set.of(Direction.EAST, Direction.WEST);
+        int nsTime = calculateGreenTime(northSouth, vehicleCounts, priorityModifiers, baseTimes);
+        int ewTime = calculateGreenTime(eastWest, vehicleCounts, priorityModifiers, baseTimes);
 
-      int nsTime = calculateGreenTime(northSouth, vehicleCounts, priorityModifiers, baseTimes);
-      int ewTime = calculateGreenTime(eastWest, vehicleCounts, priorityModifiers, baseTimes);
+        Map<Set<Direction>, Integer> optimized = new HashMap<>();
+        optimized.put(northSouth, nsTime);
+        optimized.put(eastWest, ewTime);
 
-      Map<Set<Direction>, Integer> optimized = new HashMap<>();
-      optimized.put(northSouth, nsTime);
-      optimized.put(eastWest, ewTime);
-
-      result.put(s, optimized);
+        result.put(s, optimized);
     }
 
     return result;
@@ -49,6 +46,8 @@ public class Optimizer {
   private Map<Direction, Integer> calculatePriorityModifiers(Skrzyzowanie s) {
     Map<Direction, Integer> modifiers = new EnumMap<>(Direction.class);
     for (Vehicle v : s.getPojazdy()) {
+      Direction dir = v.getDirection();
+      if (dir == null) continue;
       int reduction;
       switch (v.getPriority()) {
         case 1:
@@ -62,8 +61,8 @@ public class Optimizer {
       }
 
       if (reduction > 0) {
-        for (Direction dir : getOppositeGroup(v.getDirection())) {
-          modifiers.merge(dir, -reduction, Integer::sum);
+        for (Direction d : getOppositeGroup(v.getDirection())) {
+          modifiers.merge(d, -reduction, Integer::sum);
         }
       }
     }
@@ -87,13 +86,15 @@ public class Optimizer {
     int time = 0;
 
     for (Direction dir : group) {
-      int base = baseTimes.getOrDefault(dir, 20);
-      int vehicles = vehicleCounts.getOrDefault(dir, 0);
-      int mod = priorityModifiers.getOrDefault(dir, 0);
-      time += base + vehicles + mod;
+        int base = baseTimes.getOrDefault(dir, 5);
+        int vehicles = vehicleCounts.getOrDefault(dir, 0);
+        int mod = priorityModifiers.getOrDefault(dir, 0);
+
+        time += base + vehicles * 2 + mod;
     }
 
     time = time / group.size();
-    return Math.max(time, 10);
-  }
+
+    return Math.max(time, 3);
+}
 }

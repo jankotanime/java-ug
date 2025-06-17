@@ -18,7 +18,11 @@ public class Sygnalizator extends TrafficElement {
     kolor = k;
   }
 
+  public void setTimeToChange(int time) {
+    this.timeToChange = time;
+  }
+  
   public int getTimeToChange() {
-    return timeToChange;
+    return this.timeToChange;
   }
 }
