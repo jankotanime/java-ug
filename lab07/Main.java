@@ -17,13 +17,34 @@ public class Main {
     Skrzyzowanie skrzyzowanie2 = new Skrzyzowanie();
     Skrzyzowanie skrzyzowanie3 = new Skrzyzowanie();
 
+    Map<Direction, Sygnalizator> sygnalizatory1 = Map.of(
+      Direction.NORTH, new Sygnalizator(),
+      Direction.SOUTH, new Sygnalizator(),
+      Direction.WEST, new Sygnalizator(),
+      Direction.EAST, new Sygnalizator()
+    );
+
+    Map<Direction, Sygnalizator> sygnalizatory2 = Map.of(
+      Direction.NORTH, new Sygnalizator(),
+      Direction.SOUTH, new Sygnalizator(),
+      Direction.WEST, new Sygnalizator(),
+      Direction.EAST, new Sygnalizator()
+    );
+
+    Map<Direction, Sygnalizator> sygnalizatory3 = Map.of(
+      Direction.NORTH, new Sygnalizator(),
+      Direction.SOUTH, new Sygnalizator(),
+      Direction.WEST, new Sygnalizator(),
+      Direction.EAST, new Sygnalizator()
+    );
+
+    Map<Skrzyzowanie, Map<Direction, Sygnalizator>> skrzyzowanieSygnalizatorMap = Map.of(
+      skrzyzowanie1, sygnalizatory1,
+      skrzyzowanie2, sygnalizatory2,
+      skrzyzowanie3, sygnalizatory3
+    );
+
     List<Skrzyzowanie> skrzyzowania = List.of(skrzyzowanie1, skrzyzowanie2, skrzyzowanie3);
-
-    Sygnalizator sygnalizator1 = new Sygnalizator();
-    Sygnalizator sygnalizator2 = new Sygnalizator();
-    Sygnalizator sygnalizator3 = new Sygnalizator();
-
-    List<Sygnalizator> sygnalizatory = List.of(sygnalizator1, sygnalizator2, sygnalizator3);
 
     List<Vehicle> pojazdy = new ArrayList<>();
 
@@ -61,69 +82,74 @@ public class Main {
     
       Map<Skrzyzowanie, Map<Set<Direction>, Integer>> optymalizacje = optimizer.optimize(skrzyzowania, baseTimes);
     
-      for (int i = 0; i < skrzyzowania.size(); i++) {
-        Skrzyzowanie skrzyzowanie = skrzyzowania.get(i);
-        Sygnalizator sygnalizator = sygnalizatory.get(i);
-    
-        if (sygnalizator.getTimeToChange() <= 0) {
-          Kolor currentColor = sygnalizator.getKolor();
-          Kolor nextColor;
-          switch (currentColor) {
-            case ZIELONE:
-              nextColor = Kolor.ZOLTE;
-              break;
-            case ZOLTE:
-              nextColor = Kolor.CZERWONE;
-              break;
-            case CZERWONE:
-            default:
-              nextColor = Kolor.ZIELONE;
-              break;
+      for (Skrzyzowanie skrzyzowanie : skrzyzowania) {
+        Map<Direction, Sygnalizator> sygnalizatory = skrzyzowanieSygnalizatorMap.get(skrzyzowanie);
+
+        for (Direction kierunek : Direction.values()) {
+          Sygnalizator sygnalizator = sygnalizatory.get(kierunek);
+
+          if (sygnalizator.getTimeToChange() <= 0) {
+            Kolor currentColor = sygnalizator.getKolor();
+            Kolor nextColor;
+            switch (currentColor) {
+              case ZIELONE:
+                nextColor = Kolor.ZOLTE;
+                break;
+              case ZOLTE:
+                nextColor = Kolor.CZERWONE;
+                break;
+              case CZERWONE:
+              default:
+                nextColor = Kolor.ZIELONE;
+                break;
+            }
+            sygnalizator.updateStatus(nextColor);
+            System.out.println("Sygnalizator na skrzyżowaniu " + skrzyzowanie.getId() + " dla kierunku " + kierunek + " zmienił światło na: " + nextColor);
+
+            if (nextColor == Kolor.ZIELONE) {
+              Map<Set<Direction>, Integer> opt = optymalizacje.get(skrzyzowanie);
+              Set<Direction> activeGroup = skrzyzowania.indexOf(skrzyzowanie) % 2 == 0
+                ? Set.of(Direction.NORTH, Direction.SOUTH)
+                : Set.of(Direction.EAST, Direction.WEST);
+              int time = opt.getOrDefault(activeGroup, 5);
+              sygnalizator.setTimeToChange(time);
+              System.out.println("Ustawiono czas świecenia ZIELONEGO: " + time + " dla sygnalizatora na skrzyżowaniu " + skrzyzowanie.getId() + " dla kierunku " + kierunek);
+            }
+          } else {
+            sygnalizator.setTimeToChange(sygnalizator.getTimeToChange() - 1);
           }
-          sygnalizator.updateStatus(nextColor);
-          System.out.println("Sygnalizator " + i + " zmienił światło na: " + nextColor);
-    
-          if (nextColor == Kolor.ZIELONE) {
-            Map<Set<Direction>, Integer> opt = optymalizacje.get(skrzyzowanie);
-            Set<Direction> activeGroup = i % 2 == 0 ? Set.of(Direction.NORTH, Direction.SOUTH)
-                                                    : Set.of(Direction.EAST, Direction.WEST);
-            int time = opt.getOrDefault(activeGroup, 5);
-            sygnalizator.setTimeToChange(time);
-            System.out.println("Ustawiono czas świecenia ZIELONEGO: " + time + " dla sygnalizatora " + i);
-          }
-        } else {
-          sygnalizator.setTimeToChange(sygnalizator.getTimeToChange() - 1);
         }
       }
-    
+
       for (Skrzyzowanie skrzyzowanie : skrzyzowania) {
+        Map<Direction, Sygnalizator> sygnalizatory = skrzyzowanieSygnalizatorMap.get(skrzyzowanie);
+
         for (Direction kierunek : Direction.values()) {
-          Sygnalizator sygnalizator = sygnalizatory.get(skrzyzowania.indexOf(skrzyzowanie));
+          Sygnalizator sygnalizator = sygnalizatory.get(kierunek);
           if (sygnalizator.getKolor() == Kolor.ZIELONE) {
             Vehicle pojazd = skrzyzowanie.getPojazdy().stream()
               .filter(v -> v.getDirection() == kierunek)
               .findFirst()
               .orElse(null);
-    
+
             if (pojazd != null) {
               List<Map<UUID, Direction>> route = pojazd.getRoute();
               skrzyzowanie.removePojazd(pojazd);
               if (!route.isEmpty()) {
                 Map<UUID, Direction> currentStep = route.remove(0);
                 Direction nextKierunek = currentStep.values().iterator().next();
-    
-    
+
                 System.out.println("Pojazd " + pojazd.getId() + " przejechał skrzyżowanie " + skrzyzowanie.getId() + " w kierunku: " + kierunek);
-    
+
                 if (!route.isEmpty()) {
                   Map<UUID, Direction> nextStep = route.get(0);
                   UUID nextSkrzyzowanieId = nextStep.keySet().iterator().next();
-    
+
                   Skrzyzowanie nextSkrzyzowanie = skrzyzowania.stream()
                     .filter(s -> s.getId().equals(nextSkrzyzowanieId))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("Nie znaleziono skrzyżowania o ID: " + nextSkrzyzowanieId));
-    
+
                   nextSkrzyzowanie.addPojazd(pojazd, nextKierunek);
                   System.out.println("Pojazd " + pojazd.getId() + " wjechał na skrzyżowanie " + nextSkrzyzowanie.getId() + " w kierunku: " + nextKierunek);
                 }
@@ -136,11 +162,12 @@ public class Main {
       pojazdy.removeIf(pojazd -> {
         if (pojazd.getRoute().isEmpty()) {
           skrzyzowania.forEach(skrzyzowanie -> skrzyzowanie.removePojazd(pojazd));
+          System.out.println("Pojazd " + pojazd.getId() + " zakończył trasę i został usunięty.");
           return true;
         }
         return false;
       });
-    
+
       TimeUnit.MILLISECONDS.sleep(500);
     }
   }
